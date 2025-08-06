@@ -22,6 +22,7 @@ const InterviewSimulator: React.FC = () => {
     isLoading,
     startInterview,
     handleNextQuestion,
+    
     addMessageToChat,
     setSelectedJob,
     selectedJob,
@@ -34,6 +35,7 @@ const InterviewSimulator: React.FC = () => {
   const [voiceResult, setVoiceResult] = useState('분석 대기 중');
   const [audioAnalysisResult, setAudioAnalysisResult] = useState<AudioAnalysisResult | null>(null);
   const token1 = localStorage.getItem('access_token') ?? '';
+  const currentQuestion = interviewSession?.questions[currentQuestionIndex] ?? '';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
@@ -63,6 +65,7 @@ const InterviewSimulator: React.FC = () => {
             cameraOn={cameraOn}
             selectedJob={selectedJob}
             voiceResult={voiceResult}
+            currentQuestion={currentQuestion}
             audioAnalysisResult={audioAnalysisResult}
             onResult={(result: AudioAnalysisResult) => {
               setVoiceResult(result.text);

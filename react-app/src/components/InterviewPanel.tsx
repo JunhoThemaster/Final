@@ -17,6 +17,7 @@ interface Props {
   audioAnalysisResult: AudioAnalysisResult | null;
   onResult: (result: AudioAnalysisResult) => void;
   onCameraReady: () => void;
+  currentQuestion: string;
 }
 
 const InterviewPanel: React.FC<Props> = ({
@@ -29,7 +30,8 @@ const InterviewPanel: React.FC<Props> = ({
   voiceResult,
   audioAnalysisResult,
   onResult,
-  onCameraReady
+  onCameraReady,
+  currentQuestion,
 }) => {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #e0e0e0' }}>
@@ -63,6 +65,7 @@ const InterviewPanel: React.FC<Props> = ({
             }}>
               <VoiceLevelMeter
                 isRecording={isRecording}
+                currentQuestion={currentQuestion}
                 userId={userId}
                 token={token}
                 onResult={onResult}

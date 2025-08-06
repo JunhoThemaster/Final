@@ -94,7 +94,8 @@ from fastapi import UploadFile, File, Form
 async def audio_analyze(
     user_id: str,
     token: str = Query(...),
-    audio_file: UploadFile = File(...)
+    audio_file: UploadFile = File(...),
+    question:str = Form(...)
 ):
     # 1️⃣ 토큰 검증
     if not token_utils.verify_token(token):
@@ -108,7 +109,7 @@ async def audio_analyze(
     # 3️⃣ 바이트 읽기
     raw = await audio_file.read()
     content_type = audio_file.content_type or ""
-
+    print(f"📨 질문 수신됨: {question}")
     # 4️⃣ 임시 WAV 파일 생성
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp_path = tmp.name
