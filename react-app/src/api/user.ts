@@ -20,3 +20,20 @@ export const loginUser = async (username: string, password: string) => {
 
   return data;
 };
+
+
+
+export const  Register = async (username: string, password: string,email : string) => {
+  const response = await fetch("http://localhost:8000/api/user/Register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password ,email}),
+  });
+
+  if (!response.ok) {
+    throw new Error("회원가입 실패");
+  }
+  return true;
+};

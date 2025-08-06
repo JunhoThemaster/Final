@@ -18,7 +18,7 @@ const ChatPanel: React.FC<Props> = ({ chatMessages }) => {
             style={{
               alignSelf: m.type === 'question' ? 'flex-start' : 'flex-end',
               background: m.type === 'question' ? '#fff' : '#667eea',
-              color: m.type === 'question' ? '#000' : '#fff',
+               color: m.type === 'question' ? '#000' : '#fff',
               padding: '10px 15px', borderRadius: '15px', maxWidth: '80%'
             }}
           >

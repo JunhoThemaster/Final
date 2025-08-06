@@ -12,9 +12,14 @@ from scipy.signal import resample_poly
 from fastapi import APIRouter, Query
 import openai
 import librosa
+from app.services.auth_service import hash_password
 from ....services.interview_generator import InterviewGenerator
 from ....auth.jwt_handler import create_access_token
 from ....auth.dependencies import get_current_user
+from app.models.models import User
+from sqlalchemy.orm import Session
+import uuid
+from app.dependencies import get_db
 
 def convert_pcm16_bytes_to_float32_array(pcm_bytes: bytes) -> np.ndarray:
     int16_array = np.frombuffer(pcm_bytes, dtype=np.int16)
@@ -65,8 +70,33 @@ def login(data: LoginData):
     
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
+from pydantic import BaseModel
 
-## 오디오 송신 웹소켓 엔드포인트
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    email: str
+RegisterRequest.model_rebuild()
+
+@router.post("/Register")
+def register_user(request: RegisterRequest,db: Session = Depends(get_db) ):
+    # 이메일 중복 체크
+    if db.query(User).filter(User.email == request.email).first():
+        raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
+
+    # 사용자 생성
+    new_user = User(
+        id=str(uuid.uuid4()),
+        name=request.username,
+        email=request.email,
+        password=hash_password(request.password)
+    )
+    db.add(new_user)
+    db.commit()
+
+    return {"message": "회원가입 성공"}
+
+
 
 
 import tempfile
@@ -135,7 +165,15 @@ async def audio_analyze(
         allow_pickle=True
     )
     probs_map = {cls: float(p) for cls, p in zip(label_classes, probs)}
-
+    # save = {
+    #     "interview_id" :
+    #     "user_id":     user_id,
+    #     "timestamp":   timestamp,
+    #     "question" : question,
+    #     "answer":        text.strip(),
+    #     "emotion":     emotion,
+    #     "probabilities": probs_map,
+    # }
     # 8️⃣ JSON 결과 저장
     result = {
         "user_id":     user_id,

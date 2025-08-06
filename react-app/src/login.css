@@ -1,0 +1,75 @@
+/* 기존 login-button은 그대로 유지 */
+
+.signup-button {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+.signup-button:hover {
+  background-color: #e0e0e0;
+  color: #000;
+}
+
+/* 전체화면 중앙 정렬 */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* 박스 디자인 */
+.login-box {
+  background-color: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+/* 타이틀 */
+.login-title {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+/* 인풋 */
+.login-input {
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+.login-input:focus {
+  border-color: #667eea;
+}
+
+/* 버튼 */
+.login-button {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.login-button:hover {
+  background-color: #5a67d8;
+}

@@ -9,3 +9,5 @@ DATABASE_URL = "mysql+pymysql://admin:1234@localhost:3306/siapp?charset=utf8mb4"
 engine = create_engine(DATABASE_URL, echo=True, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
+
+
