@@ -170,33 +170,45 @@ async def get_job_categories():
 
 
 
+from pydantic import BaseModel
 
+from pydantic import BaseModel
+
+class InterviewSetupRequest(BaseModel):
+    jobUrl: str
 
 @router.post("/interview/setup/{cate}/{n_q}")
-async def setup_interview(cate: str ,n_q: int,user=Depends(get_current_user)):
+async def setup_interview(
+    cate: str,
+    n_q: int,
+    req: InterviewSetupRequest,
+    user=Depends(get_current_user)
+):
     """면접 세션 설정"""
     try:
         user_id = user["sub"]
-        # 질문 생성
+        job_url = req.jobUrl
+
+        print(f"🎯 jobUrl 수신됨: {job_url}")
+
+        # ✅ 수정: 3개 인자 전달
         questions = await interview_generator.generate_questions(
-            cate, 
+            cate,
+            job_url,
             n_q
         )
-        # 세션 저장 (간소화)
+
         return {
             "user_id": user_id,
             "questions": questions,
             "job_position": cate,
+            "job_url": job_url,
             "message": "면접 세션이 생성되었습니다."
         }
-        
+
     except Exception as e:
         print(f"❌ 면접 설정 오류: {e}")
         raise HTTPException(status_code=500, detail=f"면접 설정 오류: {str(e)}")
-
-
-
-
 
 
 
