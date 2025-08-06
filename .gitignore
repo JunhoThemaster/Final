@@ -2,3 +2,4 @@ myenv/
 venv/
 venv1/
 venv310/
+app/.env
