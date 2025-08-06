@@ -1,3 +1,4 @@
+// src/components/SideBar.tsx (기존 스타일 유지 + AI 면접 추가)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import '../Sidebar.css'; // CSS 분리 추천
@@ -9,19 +10,26 @@ const SideBar: React.FC = () => {
         <ul>
           <li>
             <NavLink
-              to="/"
-              end
+              to="/dashboard"
               className={({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '')}
             >
-              🏠 홈
+              📺 Dashboard
             </NavLink>
           </li>
-           <li>
+          <li>
             <NavLink
-              to="/records"
+              to="/interview"
               className={({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '')}
             >
-              🗂 나의 기록
+              🤖 AI 면접
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/settings"
+              className={({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '')}
+            >
+              ⚙️ 환경 설정
             </NavLink>
           </li>
         </ul>

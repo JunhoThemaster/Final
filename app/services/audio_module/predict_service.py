@@ -23,7 +23,7 @@ label_classes = np.load("app/services/audio_module/label_encoder_classes.npy", a
 
 
 def predict_emotion(audio):
-    mel_tensor = extract_melspectogram.preprocess_audio(audio).to(device)
+    mel_tensor = preprocess_audio(audio).to(device)
 
     # 시각화
     mel_np = mel_tensor.squeeze().cpu().numpy()
@@ -39,4 +39,4 @@ def predict_emotion(audio):
     for i, p in enumerate(probs):
         print(f"  {label_classes[i]:<10}: {p:.2f}")
 
-    return label_classes[pred]
+    return label_classes[pred],probs

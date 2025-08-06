@@ -18,24 +18,23 @@ async def analyze_ws(websocket: WebSocket):
 
     while True:
         try:
-            print("📥 메시지 수신 대기 중...")
+            # print("📥 메시지 수신 대기 중...")
             data_raw = await websocket.receive_text()
             data = json.loads(data_raw)
-            print("📩 수신된 JSON keys:", list(data.keys()))
+            # print("📩 수신된 JSON keys:", list(data.keys()))
 
             # ✅ 이미지 디코딩
             image_data = base64.b64decode(data.get("image", ""))
             image = Image.open(io.BytesIO(image_data)).convert("RGB")
             np_img = np.array(image)
 
-            image.save('debug__.jpg')
 
             # ✅ DeepFace 감정 분석
             try:
                 result = DeepFace.analyze(np_img, actions=["emotion"], enforce_detection=False)[0]
                 emotion = result["dominant_emotion"]
                 confidence = result["emotion"][emotion] / 100
-                print(f"🧠 감정 분석: {emotion} ({confidence:.2f})")
+                # print(f"🧠 감정 분석: {emotion} ({confidence:.2f})")
             except Exception as e:
                 print("❌ DeepFace 분석 실패:", str(e))
                 await websocket.send_json({"error": "emotion_analysis_failed"})
@@ -49,7 +48,7 @@ async def analyze_ws(websocket: WebSocket):
             head_pose = data.get("head_pose", [0.0, 0.0, 0.0])
             posture = data.get("posture", 0)
 
-            print(f"👁️ EAR: {ear} | 👀 Gaze: ({gaze_x}, {gaze_y}) | 🧠 Head Pose: {head_pose}")
+            # print(f"👁️ EAR: {ear} | 👀 Gaze: ({gaze_x}, {gaze_y}) | 🧠 Head Pose: {head_pose}")
 
             # ✅ MLP 입력 벡터 구성
             vector = (
@@ -59,25 +58,26 @@ async def analyze_ws(websocket: WebSocket):
             )
 
             prediction = analyze_vector(vector)
-            print("✅ 감정 예측 결과:", prediction)
+            # print("✅ 감정 예측 결과:", prediction)
 
             # ✅ 깜빡임 누적 계산
             blink_delta = blink_count
             total_blinks += blink_delta
-            print(f"👁️ 이번 깜빡임 수: {blink_delta}, 누적: {total_blinks}")
+            # print(f"👁️ 이번 깜빡임 수: {blink_delta}, 누적: {total_blinks}")
 
             # ✅ 응답 구성
             response = {
                 "emotion": prediction,
                 "raw_emotion": emotion,
-                "confidence": round(confidence, 3),
-                "blink_count": blink_delta,
-                "total_blink_count": total_blinks,
-                "posture": posture
+                "confidence": float(np.round(confidence, 3)),  # 👈 float32 → float 변환
+                "blink_count": int(blink_delta),
+                "total_blink_count": int(total_blinks),
+                "posture": str(posture),  # 혹시 posture가 np.str_이면 str 변환 필요
             }
 
+
             await websocket.send_json(response)
-            print("📤 응답 전송 완료:", response)
+            # print("📤 응답 전송 완료:", response)
 
         except Exception as e:
             print("❌ WebSocket 처리 중 오류:", str(e))

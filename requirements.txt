@@ -1,0 +1,36 @@
+# === FastAPI 서버 관련 ===  파이썬 가상환경 3.10.18 기준 통합버전 (이정교는 conda venv) 기준으로 
+
+# 무조건 이거 먼저 다운 받고 -> pip install torch==2.1.2+cu118 torchvision==0.16.2+cu118 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+# 그 다음에 프롬프트로 밑에 있는 모듈 버전들 일괄다운 받기
+
+fastapi==0.110.2
+uvicorn[standard]==0.29.0  # ✅ WebSocket, reload 등 포함
+starlette==0.37.2  
+pydantic==2.11.7
+python-multipart
+python-jose[cryptography]==3.5.0
+PyJWT==2.8.0
+
+
+
+tensorflow==2.14.0
+keras==2.14.0
+
+# === 감정 분석 ===
+deepface==0.0.79
+retina-face==0.0.13
+tf-keras
+
+# === 오디오 분석 ===
+faster-whisper==0.10.0
+librosa==0.10.1
+sounddevice==0.4.6
+
+# === 유틸리티 / 시각화 ===
+numpy==1.24.3
+typing-extensions==4.12.2
+opencv-python==4.7.0.72
+pillow
+tqdm
+huggingface-hub
+openai

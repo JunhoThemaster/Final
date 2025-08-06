@@ -1,123 +1,153 @@
+// src/components/VoiceLevelMeter.tsx
 import React, { useEffect, useRef, useState } from "react";
-
-interface Props {
-  isActive: boolean;
-  userId: string;
-  token: string;
+import AudioVisualizer from "./AudioVisualizer";
+export interface AudioAnalysisResult {
+  text: string;
+  emotion: string;
+  probabilities: Record<string, number>;
 }
 
-const VoiceLevelMeter: React.FC<Props> = ({ isActive, userId, token }) => {
+interface Props {
+  isRecording: boolean;
+  userId: string;
+  token: string;
+  onResult: (result: AudioAnalysisResult) => void;  // 🔥 수정
+}
+
+const VoiceLevelMeter: React.FC<Props> = ({ isRecording, userId, token, onResult }) => {
   const [volume, setVolume] = useState(0);
+  const [playUrl, setPlayUrl] = useState<string | null>(null);     // ▶️ 재생용 URL
   const audioContextRef = useRef<AudioContext | null>(null);
-  const websocketRef = useRef<WebSocket | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const animationRef = useRef<number | null>(null);
-  const tempBufferRef = useRef<Float32Array[]>([]); // ✅ 최상단으로 이동
+  const tempBufferRef = useRef<Float32Array[]>([]);
 
   useEffect(() => {
-    if (!isActive) {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-      if (websocketRef.current) {
-        websocketRef.current.close();
-        websocketRef.current = null;
-      }
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-      tempBufferRef.current = []; // cleanup
-      setVolume(0);
-      return;
+    if (isRecording) startMic();
+    else stopMic();
+
+    return () => { stopMic(); URL.revokeObjectURL(playUrl || ""); };
+  }, [isRecording]);
+
+  const startMic = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true }
+      });
+      const audioCtx = new AudioContext();
+      const src = audioCtx.createMediaStreamSource(stream);
+      const proc = audioCtx.createScriptProcessor(4096, 1, 1);
+
+      proc.onaudioprocess = e => {
+        const input = e.inputBuffer.getChannelData(0);
+        tempBufferRef.current.push(new Float32Array(input));
+        const avg = input.reduce((s, v) => s + Math.abs(v), 0) / input.length;
+        setVolume(Math.min(100, Math.round(avg * 100)));
+      };
+
+      src.connect(proc);
+      proc.connect(audioCtx.destination);
+
+      audioContextRef.current = audioCtx;
+      processorRef.current = proc;
+    } catch (err) {
+      console.error("마이크 접근 실패:", err);
+    }
+  };
+
+  const stopMic = async () => {
+    // 1) 녹음 중지
+    processorRef.current?.disconnect();
+    audioContextRef.current?.close();
+    const origSR = audioContextRef.current?.sampleRate || 48000;
+    audioContextRef.current = null;
+    processorRef.current = null;
+
+    // 2) Float32Array 합치기
+    const chunks = tempBufferRef.current.splice(0);
+    const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+    if (totalLen === 0) { setVolume(0); return; }
+    const merged = new Float32Array(totalLen);
+    let off = 0;
+    for (const c of chunks) {
+      merged.set(c, off);
+      off += c.length;
     }
 
-    const float32ToInt16 = (float32Array: Float32Array): ArrayBuffer => {
-      const int16Array = new Int16Array(float32Array.length);
-      for (let i = 0; i < float32Array.length; i++) {
-        int16Array[i] = Math.max(-32768, Math.min(32767, float32Array[i] * 32767));
-      }
-      return int16Array.buffer;
-    };
+    // 3) 16kHz 다운샘플링 via OfflineAudioContext
+    const offline = new OfflineAudioContext(1, Math.ceil(totalLen * 16000 / origSR), 16000);
+    const buf = offline.createBuffer(1, totalLen, origSR);
+    buf.copyToChannel(merged, 0);
+    const src = offline.createBufferSource();
+    src.buffer = buf;
+    src.connect(offline.destination);
+    src.start();
+    const rendered = await offline.startRendering();   // AudioBuffer @16kHz
+    const ds = rendered.getChannelData(0);
 
-    const startMic = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const audioCtx = new AudioContext();
-        const source = audioCtx.createMediaStreamSource(stream);
-        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+    // 4) PCM16 변환
+    const pcm16 = new Int16Array(ds.length);
+    for (let i = 0; i < ds.length; i++) {
+      const s = Math.max(-1, Math.min(1, ds[i]));
+      pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
 
-        const ws = new WebSocket(`ws://localhost:8000/api/user/ws/audio/${userId}?token=${token}`);
-        ws.onopen = () => console.log("✅ WebSocket 연결됨");
-        ws.onclose = () => console.log("❌ WebSocket 연결 종료됨");
-        ws.onerror = (e) => console.error("WebSocket 에러:", e);
+    // 5) WAV 헤더 붙이기
+    const wavBlob = encodeWAV(pcm16, 1, 16000);
 
-        const sampleRate = audioCtx.sampleRate; // 대부분 48000
+    // ▶️ 즉시 재생
+    const url = URL.createObjectURL(wavBlob);
+    setPlayUrl(url);
 
-        processor.onaudioprocess = (event) => {
-          const input = event.inputBuffer.getChannelData(0);
-          tempBufferRef.current.push(new Float32Array(input));
+    // 6) FormData로 서버 전송
+    const form = new FormData();
+    form.append("audio_file", wavBlob, "audio.wav");
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/user/audio/${userId}?token=${token}`,
+        { method: "POST", body: form }
+      );
+      const data = await res.json();
+      onResult({
+        text: data.text,
+        emotion: data.emotion,
+        probabilities: data.probabilities,
+      });
 
-          const totalLength = tempBufferRef.current.reduce((sum, chunk) => sum + chunk.length, 0);
-          const durationSec = totalLength / sampleRate;
+    } catch (err) {
+      console.error("오디오 전송 실패:", err);
+    }
 
-          if (durationSec >= 3.0) {
-            const merged = new Float32Array(totalLength);
-            let offset = 0;
-            for (const chunk of tempBufferRef.current) {
-              merged.set(chunk, offset);
-              offset += chunk.length;
-            }
+    setVolume(0);
+  };
 
-            const buffer = float32ToInt16(merged);
-            if (websocketRef.current?.readyState === WebSocket.OPEN) {
-              websocketRef.current.send(buffer);
-            }
-
-            tempBufferRef.current = []; // 초기화
-          }
-
-          const avg = input.reduce((a, v) => a + Math.abs(v), 0) / input.length;
-          setVolume(Math.min(100, Math.round(avg * 100)));
-        };
-
-        source.connect(processor);
-        processor.connect(audioCtx.destination);
-
-        audioContextRef.current = audioCtx;
-        websocketRef.current = ws;
-        processorRef.current = processor;
-      } catch (err) {
-        console.error("마이크 접근 실패:", err);
-      }
-    };
-
-    startMic();
-  }, [isActive, userId, token]); // ✅ 의존성도 안전하게 추가
+  // WAV 인코딩 (RIFF 헤더)
+  const encodeWAV = (samples: Int16Array, channels: number, sampleRate: number) => {
+    const buf = new ArrayBuffer(44 + samples.length * 2);
+    const dv = new DataView(buf);
+    writeString(dv, 0, "RIFF"); dv.setUint32(4, 36 + samples.length * 2, true);
+    writeString(dv, 8, "WAVE"); writeString(dv, 12, "fmt "); dv.setUint32(16, 16, true);
+    dv.setUint16(20, 1, true); dv.setUint16(22, channels, true);
+    dv.setUint32(24, sampleRate, true);
+    dv.setUint32(28, sampleRate * channels * 2, true);
+    dv.setUint16(32, channels * 2, true); dv.setUint16(34, 16, true);
+    writeString(dv, 36, "data"); dv.setUint32(40, samples.length * 2, true);
+    let off = 44;
+    for (let i = 0; i < samples.length; i++, off += 2) {
+      dv.setInt16(off, samples[i], true);
+    }
+    return new Blob([dv], { type: "audio/wav" });
+  };
+  const writeString = (dv: DataView, offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) dv.setUint8(offset + i, str.charCodeAt(i));
+  };
 
   return (
     <div style={{ marginTop: "1rem" }}>
-      <div>🎤 마이크 레벨</div>
-      <div
-        style={{
-          width: "100%",
-          height: "10px",
-          background: "#eee",
-          borderRadius: "5px",
-          marginTop: "5px",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            width: `${volume}%`,
-            height: "100%",
-            background: volume > 70 ? "red" : volume > 40 ? "orange" : "green",
-            transition: "width 0.1s linear",
-          }}
-        />
-      </div>
+      <div style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>🎤 마이크 레벨</div>
+      <AudioVisualizer audioLevel={volume} />
+
+      {/* ▶️ 다운샘플된 WAV 바로 재생 */}
+   
     </div>
   );
 };
