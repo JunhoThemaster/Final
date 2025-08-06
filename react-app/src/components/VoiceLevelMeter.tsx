@@ -21,12 +21,22 @@ const VoiceLevelMeter: React.FC<Props> = ({ isRecording, userId, token, onResult
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const tempBufferRef = useRef<Float32Array[]>([]);
 
-  useEffect(() => {
-    if (isRecording) startMic();
-    else stopMic();
+  const hasSentRef = useRef(false); // 중복 전송 방지
 
-    return () => { stopMic(); URL.revokeObjectURL(playUrl || ""); };
-  }, [isRecording]);
+useEffect(() => {
+  if (isRecording) {
+    hasSentRef.current = false; // 녹음 시작 시 초기화
+    startMic();
+  } else {
+    stopMic();
+  }
+
+  return () => {
+    // ❌ 여기에서 stopMic 제거!
+    URL.revokeObjectURL(playUrl || "");
+  };
+}, [isRecording]);
+
 
   const startMic = async () => {
     try {
@@ -56,6 +66,9 @@ const VoiceLevelMeter: React.FC<Props> = ({ isRecording, userId, token, onResult
 
   const stopMic = async () => {
     // 1) 녹음 중지
+
+    if (hasSentRef.current) return; // ✅ 이미 보냈으면 중단
+    hasSentRef.current = true;
     processorRef.current?.disconnect();
     audioContextRef.current?.close();
     const origSR = audioContextRef.current?.sampleRate || 48000;
