@@ -14,6 +14,7 @@ interface Props {
   cameraOn: boolean;
   selectedJob: string;
   voiceResult: string;
+  interviewId: string;
   audioAnalysisResult: AudioAnalysisResult | null;
   onResult: (result: AudioAnalysisResult) => void;
   onCameraReady: () => void;
@@ -27,6 +28,7 @@ const InterviewPanel: React.FC<Props> = ({
   userId,
   cameraOn,
   selectedJob,
+  interviewId,
   voiceResult,
   audioAnalysisResult,
   onResult,
@@ -64,6 +66,7 @@ const InterviewPanel: React.FC<Props> = ({
               width: '640px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
             }}>
               <VoiceLevelMeter
+                interviewId={interviewId}
                 isRecording={isRecording}
                 currentQuestion={currentQuestion}
                 userId={userId}

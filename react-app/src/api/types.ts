@@ -6,9 +6,11 @@ export interface InterviewSetupRequest {
 }
 
 export interface InterviewSetupResponse {
-  session_id: string;
+  interview_id: string;         // ✅ 이 줄 추가
+  user_id: string;
   questions: string[];
   job_position: string;
+  job_url: string;
   message: string;
 }
 

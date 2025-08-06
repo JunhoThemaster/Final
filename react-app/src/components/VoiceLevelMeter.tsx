@@ -11,11 +11,12 @@ interface Props {
   isRecording: boolean;
   userId: string;
   token: string;
+  interviewId: string;
   onResult: (result: AudioAnalysisResult) => void;
   currentQuestion: string;  // 🔥 수정
 }
 
-const VoiceLevelMeter: React.FC<Props> = ({ isRecording, userId, token, currentQuestion,onResult }) => {
+const VoiceLevelMeter: React.FC<Props> = ({ isRecording, userId, token, currentQuestion,interviewId,onResult }) => {
   const [volume, setVolume] = useState(0);
   const [playUrl, setPlayUrl] = useState<string | null>(null);     // ▶️ 재생용 URL
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -116,7 +117,7 @@ useEffect(() => {
     const form = new FormData();
     form.append("audio_file", wavBlob, "audio.wav");
     form.append("question", currentQuestion); // ✅ 질문 추가
-
+    form.append("interview_id", interviewId);
     try {
       const res = await fetch(
         `http://localhost:8000/api/user/audio/${userId}?token=${token}`,

@@ -14,7 +14,7 @@ class User(Base):
     id = Column(String(50), primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, nullable=False)
-    password = Column(String(200), nullable=False)  # 🔥 추가
+    password = Column(String(200), nullable=False)  
     interviews = relationship("Interview", back_populates="user")
     audio_analyses = relationship("InterviewAudioAnalyze", back_populates="user")
 

@@ -14,12 +14,15 @@ import openai
 import librosa
 from app.services.auth_service import hash_password
 from ....services.interview_generator import InterviewGenerator
-from ....auth.jwt_handler import create_access_token
+from ....auth.jwt_handler import create_access_token,decode_jwt_token
 from ....auth.dependencies import get_current_user
 from app.models.models import User
 from sqlalchemy.orm import Session
 import uuid
 from app.dependencies import get_db
+from passlib.context import CryptContext
+
+
 
 def convert_pcm16_bytes_to_float32_array(pcm_bytes: bytes) -> np.ndarray:
     int16_array = np.frombuffer(pcm_bytes, dtype=np.int16)
@@ -50,25 +53,28 @@ router = APIRouter(
     tags=["user"]        # Swagger에서 보여질 카테고리 이름
 )
 
-FAKE_USERNAME = "admin"
-FAKE_PASSWORD = "1234"
-
-
-
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class LoginData(BaseModel):
-    username: str
+    email: str
     password: str
 
 @router.post("/login")
-def login(data: LoginData):
-    # 🔐 여기서 실제 유저 인증 로직 (DB 조회 등)을 넣을 수 있음
-    if data.username == "admin" and data.password == "1234":
-        # ✅ JWT 생성 함수 사용
-        token = create_access_token(data={"sub": data.username})
-        return {"access_token": token, "token_type": "bearer"}
-    
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+def login(data: LoginData, db: Session = Depends(get_db)):
+    # ✅ 1. 이메일로 유저 조회
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="존재하지 않는 사용자입니다.")
+
+    # ✅ 2. 비밀번호 검증
+    if not pwd_context.verify(data.password, user.password):
+        raise HTTPException(status_code=401, detail="비밀번호가 올바르지 않습니다.")
+
+    # ✅ 3. 토큰 생성
+    token = create_access_token(data={"sub": user.name})
+    return {"access_token": token, "token_type": "bearer"}
+
+
 
 from pydantic import BaseModel
 
@@ -116,70 +122,74 @@ import json
 from datetime import datetime
 
 SAVE_DIR = "./saved_audios"  # 원하는 저장 경로
-
+from app.models.models import InterviewAudioAnalyze
 from fastapi import UploadFile, File, Query, HTTPException
 from fastapi import UploadFile, File, Form
 
 @router.post("/audio/{user_id}")
 async def audio_analyze(
-    user_id: str,
+    user_id: str,         # 🔥 인터뷰 ID 추가
+    question: str = Form(...),             # 🔥 질문 내용
     token: str = Query(...),
+    interview_id: str = Form(...),
     audio_file: UploadFile = File(...),
-    question:str = Form(...)
+    db: Session = Depends(get_db),         # 🔥 DB 세션 주입
 ):
     # 1️⃣ 토큰 검증
     if not token_utils.verify_token(token):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    # 2️⃣ 결과(JSON) 저장 폴더 및 타임스탬프 준비
+    # 2️⃣ 저장 경로 준비
+    print(user_id)
     user_dir = os.path.join(SAVE_DIR, user_id)
     os.makedirs(user_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    user = db.query(User).filter(User.name == user_id).first()
 
-    # 3️⃣ 바이트 읽기
+    print(user_id)
+    # 3️⃣ 오디오 저장
     raw = await audio_file.read()
     content_type = audio_file.content_type or ""
-    print(f"📨 질문 수신됨: {question}")
-    # 4️⃣ 임시 WAV 파일 생성
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp_path = tmp.name
         if content_type == "audio/wav":
-            tmp.write(raw)  # 이미 WAV 헤더 포함된 경우
+            tmp.write(raw)
         else:
-            # PCM16 바이트 → WAV 변환
-            tmp.close()  # save_pcm_as_wav가 같은 경로에 쓸 수 있도록
+            tmp.close()
             save_pcm_as_wav(raw, tmp_path, sample_rate=16000)
 
     try:
-        # 5️⃣ Clova STT + 감정 예측
+        # 4️⃣ 분석
         text = clova_transcribe(tmp_path)
         y = load_audio_float32(tmp_path)
         emotion, probs = predict_service.predict_emotion(y)
     finally:
-        # 6️⃣ 임시 WAV 파일 삭제
         os.remove(tmp_path)
 
-    # 7️⃣ 확률 맵 생성
-    label_classes = np.load(
-        "app/services/audio_module/label_encoder_classes.npy",
-        allow_pickle=True
-    )
+    # 5️⃣ 확률 맵
+    label_classes = np.load("app/services/audio_module/label_encoder_classes.npy", allow_pickle=True)
     probs_map = {cls: float(p) for cls, p in zip(label_classes, probs)}
-    # save = {
-    #     "interview_id" :
-    #     "user_id":     user_id,
-    #     "timestamp":   timestamp,
-    #     "question" : question,
-    #     "answer":        text.strip(),
-    #     "emotion":     emotion,
-    #     "probabilities": probs_map,
-    # }
-    # 8️⃣ JSON 결과 저장
+    # 6️⃣ DB 저장
+    analysis = InterviewAudioAnalyze(
+        interview_id=interview_id,
+        user_id=user.id,
+        timestamp=datetime.utcnow(),
+        question=question,
+        answer=text.strip(),
+        emotion=emotion,
+        probabilities=probs_map
+    )
+    db.add(analysis)
+    db.commit()
+
+    # 7️⃣ 파일도 백업용 저장 (선택)
     result = {
-        "user_id":     user_id,
-        "timestamp":   timestamp,
-        "text":        text.strip(),
-        "emotion":     emotion,
+        "user_id": user.id,
+        "interview_id": interview_id,
+        "timestamp": timestamp,
+        "question": question,
+        "text": text.strip(),
+        "emotion": emotion,
         "probabilities": probs_map,
     }
     json_path = os.path.join(user_dir, f"{timestamp}.json")
@@ -189,29 +199,17 @@ async def audio_analyze(
     print(f"✅ 결과 저장 완료: {json_path}")
     return result
 
-
 class FieldRequest(BaseModel):
     field: str
 
 
 interview_generator = InterviewGenerator()
-@router.get("/questions/categories")
-async def get_job_categories():
-    
-    """직무 카테고리 반환"""
-    try:
-        categories = interview_generator.get_available_positions()
-        return {"categories": categories}
-    except Exception as e:
-        print(f"❌ 카테고리 조회 오류: {e}")
-        return {"categories": ["Management", "Sales Marketing", "ICT", "Design"]}
-
 
 
 
 from pydantic import BaseModel
-
-from pydantic import BaseModel
+from app.models.models import Interview
+from uuid import uuid4
 
 class InterviewSetupRequest(BaseModel):
     jobUrl: str
@@ -221,33 +219,48 @@ async def setup_interview(
     cate: str,
     n_q: int,
     req: InterviewSetupRequest,
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),  # 🔑 DB 세션 추가
 ):
+    
+
     """면접 세션 설정"""
     try:
-        user_id = user["sub"]
+       
         job_url = req.jobUrl
+        interview_id = str(uuid4())  # 🔐 인터뷰 UUID 생성
 
         print(f"🎯 jobUrl 수신됨: {job_url}")
 
-        # ✅ 수정: 3개 인자 전달
+        # 🔹 1. 질문 생성
         questions = await interview_generator.generate_questions(
             cate,
             job_url,
             n_q
         )
-
+        user = db.query(User).filter(User.name == user['sub']).first()
+        # 🔹 2. 인터뷰 객체 생성 및 저장
+        new_interview = Interview(
+            id=interview_id,
+            user_id=user.id,
+            job_position=cate,
+            job_url=job_url
+        )
+        db.add(new_interview)
+        db.commit()
+        
         return {
-            "user_id": user_id,
+            "interview_id" : new_interview.id,
+            "user_id": user.id,
             "questions": questions,
             "job_position": cate,
             "job_url": job_url,
+            
             "message": "면접 세션이 생성되었습니다."
         }
 
     except Exception as e:
         print(f"❌ 면접 설정 오류: {e}")
         raise HTTPException(status_code=500, detail=f"면접 설정 오류: {str(e)}")
-
 
 

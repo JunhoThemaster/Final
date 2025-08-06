@@ -36,6 +36,7 @@ const InterviewSimulator: React.FC = () => {
   const [audioAnalysisResult, setAudioAnalysisResult] = useState<AudioAnalysisResult | null>(null);
   const token1 = localStorage.getItem('access_token') ?? '';
   const currentQuestion = interviewSession?.questions[currentQuestionIndex] ?? '';
+  const interviewId = interviewSession?.interview_id;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
@@ -62,6 +63,7 @@ const InterviewSimulator: React.FC = () => {
             setIsRecording={setIsRecording}
             token={token1}
             userId="admin"
+            interviewId={interviewId ?? ''}
             cameraOn={cameraOn}
             selectedJob={selectedJob}
             voiceResult={voiceResult}
