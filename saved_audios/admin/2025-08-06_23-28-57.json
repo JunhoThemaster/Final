@@ -1,0 +1,17 @@
+{
+  "user_id": "4cac07df-8832-4965-9693-e11ef0b5d11e",
+  "interview_id": "dc670054-7858-4cd6-9408-9ba9a9a558a7",
+  "timestamp": "2025-08-06_23-28-57",
+  "question": "SpringBoot에서의 AOP(Aspect-Oriented Programming)을 활용한 경험이 있나요? 어떤 상황에서 사용하였고, 어떠한 이점을 얻을 수 있었나요?",
+  "text": "공통적으로 사용하여 함수에 대한 리 팩토링 가능합니다",
+  "emotion": "angry",
+  "probabilities": {
+    "angry": 0.5507774353027344,
+    "disgust": 0.0033792206086218357,
+    "fear": 6.327928986138431e-06,
+    "happiness": 0.2681331932544708,
+    "neutral": 0.12855103611946106,
+    "sadness": 0.04784327745437622,
+    "surprise": 0.0013094948371872306
+  }
+}

@@ -48,3 +48,23 @@ class InterviewAudioAnalyze(Base):
 
     user = relationship("User", back_populates="audio_analyses")
     interview = relationship("Interview", back_populates="audio_analyses")
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
+class InterviewVideoAnalyze(Base):
+    __tablename__ = "interview_video_analyze"
+
+    id = Column(Integer, primary_key=True, index=True)
+    interview_id = Column(String(50), ForeignKey("interviews.id"), nullable=True)
+    
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)  # 예: 2025-08-06T20:13:15
+    emotion = Column(String(50), nullable=False)       # 예측 감정 (자신감, 불안정 등)
+    raw_emotion = Column(String(50), nullable=True)    # 원본 감정 (예: DeepFace 결과)
+    confidence = Column(Float, nullable=True)          # 감정 신뢰도 (0~1)
+
+    blink_count = Column(Integer, nullable=True)       # 눈 깜빡임 횟수
+    posture = Column(String(50), nullable=True)        # 자세 상태 ("정상", "불안정")
+
+    gaze_x = Column(Float, nullable=True)              # 시선 X
+    gaze_y = Column(Float, nullable=True)              # 시선 Y
+
+    head_pose = Column(JSON, nullable=True)            # 머리 위치 [x, y, z]
+    ear = Column(Float, nullable=True)                 # 눈 비율 (EAR)

@@ -1,0 +1,17 @@
+{
+  "user_id": "4cac07df-8832-4965-9693-e11ef0b5d11e",
+  "interview_id": "68b7fed3-75bf-437c-95f7-4fa4c64ba3d7",
+  "timestamp": "2025-08-06_21-20-46",
+  "question": "RESTful API와 GraphQL 중 어떤 것을 사용해본 경험이 있으며, 각각의 장단점은 무엇이라고 생각하시나요??",
+  "text": "몰라요",
+  "emotion": "neutral",
+  "probabilities": {
+    "angry": 0.0007008868269622326,
+    "disgust": 0.0005670855171047151,
+    "fear": 7.560378435300663e-06,
+    "happiness": 8.071582124102861e-05,
+    "neutral": 0.9927592277526855,
+    "sadness": 0.005734049715101719,
+    "surprise": 0.00015054800314828753
+  }
+}

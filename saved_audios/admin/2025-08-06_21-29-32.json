@@ -1,0 +1,17 @@
+{
+  "user_id": "4cac07df-8832-4965-9693-e11ef0b5d11e",
+  "interview_id": "29faed5e-54d3-4e66-869d-ae0985038d75",
+  "timestamp": "2025-08-06_21-29-32",
+  "question": "RESTful API 설계 시 고려해야 할 사항은 무엇인가요?",
+  "text": "잘 모르겠습니다",
+  "emotion": "neutral",
+  "probabilities": {
+    "angry": 5.253882022770995e-07,
+    "disgust": 6.381476396200014e-07,
+    "fear": 3.3505461516369905e-08,
+    "happiness": 9.222218068316579e-06,
+    "neutral": 0.9998912811279297,
+    "sadness": 8.055388752836734e-05,
+    "surprise": 1.7785294403438456e-05
+  }
+}

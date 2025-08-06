@@ -1,0 +1,17 @@
+{
+  "user_id": "4cac07df-8832-4965-9693-e11ef0b5d11e",
+  "interview_id": "3ca14d9c-29da-4bba-a64f-50aefd4aaebe",
+  "timestamp": "2025-08-06_21-34-53",
+  "question": "병목 현상을 해결하기 위해 어떤 방법을 사용했던 경험이 있으신가요?",
+  "text": "잘 모르겠습니다",
+  "emotion": "neutral",
+  "probabilities": {
+    "angry": 6.037270850356435e-06,
+    "disgust": 4.825776613870403e-07,
+    "fear": 4.0768077802511016e-09,
+    "happiness": 1.0424299034639262e-05,
+    "neutral": 0.9999767541885376,
+    "sadness": 3.94318067264976e-06,
+    "surprise": 2.2041645024728496e-06
+  }
+}

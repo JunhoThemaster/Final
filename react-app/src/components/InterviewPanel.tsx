@@ -58,7 +58,7 @@ const InterviewPanel: React.FC<Props> = ({
         {cameraOn && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ width: '640px', height: '480px' }}>
-              <PoseTracker onCameraReady={onCameraReady} />
+              <PoseTracker onCameraReady={onCameraReady} interviewid={interviewId} />
             </div>
             <div style={{
               marginTop: '1rem', padding: '1rem',

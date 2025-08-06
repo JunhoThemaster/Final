@@ -64,11 +64,7 @@ const DashBoard: React.FC = () => {
         </div>
       )}
 
-      {cameraOn && (
-        <div className="camera-wrapper">
-          <PoseTracker onCameraReady={handleCameraReady} />
-        </div>
-      )}
+  
     </div>
   );
 };

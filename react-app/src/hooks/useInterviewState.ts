@@ -59,6 +59,7 @@ export const useInterviewState = () => {
     } else {
       setIsInterviewComplete(true);
       addMessageToChat('question', '모든 질문이 완료되었습니다.', 999);
+      setStep('results');
     }
   };
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, WebSocket, Depends, HTTPException
 from app.DL_model.MLP import analyze_vector, emotion_to_onehot
 from PIL import Image
 import io
@@ -6,51 +6,50 @@ import json
 import base64
 import numpy as np
 from deepface import DeepFace
+from app.models.models import Interview, InterviewVideoAnalyze
+from app.dependencies import get_db
+from sqlalchemy.orm import Session
+from uuid import uuid4
+from datetime import datetime, timedelta  # ⏰ 저장 주기 조절용
 
 router = APIRouter()
 
 @router.websocket("/ws/video")
-async def analyze_ws(websocket: WebSocket):
+async def analyze_ws(websocket: WebSocket, db: Session = Depends(get_db)):
     await websocket.accept()
     print("🟢 WebSocket 클라이언트 연결됨")
 
-    total_blinks = 0  # ✅ 전체 누적 깜빡임 수
+    total_blinks = 0
+    last_saved_time = datetime.utcnow() - timedelta(seconds=3)  # 초기값은 3초 전으로 설정
 
     while True:
         try:
-            # print("📥 메시지 수신 대기 중...")
             data_raw = await websocket.receive_text()
             data = json.loads(data_raw)
-            # print("📩 수신된 JSON keys:", list(data.keys()))
 
-            # ✅ 이미지 디코딩
+            interview_id = data.get("interviewid")
+            interview_obj = db.query(Interview).filter(Interview.id == interview_id).first()
+
             image_data = base64.b64decode(data.get("image", ""))
             image = Image.open(io.BytesIO(image_data)).convert("RGB")
             np_img = np.array(image)
 
-
-            # ✅ DeepFace 감정 분석
             try:
                 result = DeepFace.analyze(np_img, actions=["emotion"], enforce_detection=False)[0]
                 emotion = result["dominant_emotion"]
                 confidence = result["emotion"][emotion] / 100
-                # print(f"🧠 감정 분석: {emotion} ({confidence:.2f})")
             except Exception as e:
                 print("❌ DeepFace 분석 실패:", str(e))
                 await websocket.send_json({"error": "emotion_analysis_failed"})
                 continue
 
-            # ✅ 방어 처리된 입력값 추출
             gaze_x = data.get("gaze_x", 0.0)
             gaze_y = data.get("gaze_y", 0.0)
-            ear = data.get("ear", 0.0)  # ← 에러 방지 핵심
+            ear = data.get("ear", 0.0)
             blink_count = data.get("blink_count", 0)
             head_pose = data.get("head_pose", [0.0, 0.0, 0.0])
             posture = data.get("posture", 0)
 
-            # print(f"👁️ EAR: {ear} | 👀 Gaze: ({gaze_x}, {gaze_y}) | 🧠 Head Pose: {head_pose}")
-
-            # ✅ MLP 입력 벡터 구성
             vector = (
                 emotion_to_onehot(emotion) +
                 [confidence, gaze_x, gaze_y, ear, blink_count] +
@@ -58,26 +57,41 @@ async def analyze_ws(websocket: WebSocket):
             )
 
             prediction = analyze_vector(vector)
-            # print("✅ 감정 예측 결과:", prediction)
 
-            # ✅ 깜빡임 누적 계산
             blink_delta = blink_count
             total_blinks += blink_delta
-            # print(f"👁️ 이번 깜빡임 수: {blink_delta}, 누적: {total_blinks}")
 
-            # ✅ 응답 구성
             response = {
                 "emotion": prediction,
                 "raw_emotion": emotion,
-                "confidence": float(np.round(confidence, 3)),  # 👈 float32 → float 변환
+                "confidence": float(np.round(confidence, 3)),
                 "blink_count": int(blink_delta),
                 "total_blink_count": int(total_blinks),
-                "posture": str(posture),  # 혹시 posture가 np.str_이면 str 변환 필요
+                "posture": str(posture),
             }
 
+            # 🔽 3초마다만 저장
+            now = datetime.utcnow()
+            if now - last_saved_time >= timedelta(seconds=3):
+                analysis = InterviewVideoAnalyze(
+                    interview_id=interview_id,
+                    timestamp=now,
+                    emotion=prediction,
+                    raw_emotion=emotion,
+                    confidence=confidence,
+                    blink_count=blink_count,
+                    posture=str(posture),
+                    gaze_x=gaze_x,
+                    gaze_y=gaze_y,
+                    head_pose=head_pose,
+                    ear=ear
+                )
+                db.add(analysis)
+                db.commit()
+                last_saved_time = now
+                print("✅ 3초 주기로 감정 분석 결과 저장됨")
 
             await websocket.send_json(response)
-            # print("📤 응답 전송 완료:", response)
 
         except Exception as e:
             print("❌ WebSocket 처리 중 오류:", str(e))

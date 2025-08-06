@@ -8,10 +8,11 @@ import {
 } from "../utils/drawingUtils";
 
 interface PoseTrackerProps {
+  interviewid :string;
   onCameraReady: () => void;
 }
 
-const PoseTracker: React.FC<PoseTrackerProps> = ({ onCameraReady }) => {
+const PoseTracker: React.FC<PoseTrackerProps> = ({ onCameraReady,interviewid }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cameraRef = useRef<Camera | null>(null);
@@ -107,6 +108,7 @@ const PoseTracker: React.FC<PoseTrackerProps> = ({ onCameraReady }) => {
 
     const payload = {
       timestamp: new Date().toISOString(),
+      interviewid : interviewid,
       blink_count: blinkCountRef.current,
       gaze_x: irisX,
       gaze_y: irisY,

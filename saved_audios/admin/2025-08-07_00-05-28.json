@@ -1,0 +1,17 @@
+{
+  "user_id": "4cac07df-8832-4965-9693-e11ef0b5d11e",
+  "interview_id": "8feeb7e7-a2cd-4605-80a6-6f9c90d88d90",
+  "timestamp": "2025-08-07_00-05-28",
+  "question": "RESTful API 설계 시 고려해야 할 원칙은 무엇이며, 이를 준수하기 위해 어떤 노력을 기울이나요??",
+  "text": "잘 모르겠습니다",
+  "emotion": "neutral",
+  "probabilities": {
+    "angry": 1.7558064428158104e-05,
+    "disgust": 6.44958390694228e-07,
+    "fear": 3.158917571965958e-09,
+    "happiness": 2.840815795934759e-07,
+    "neutral": 0.9999692440032959,
+    "sadness": 1.138676543632755e-05,
+    "surprise": 9.619700449547963e-07
+  }
+}
