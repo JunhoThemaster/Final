@@ -58,12 +58,13 @@ python embedding\text2video\embed_batch_ti_from_csv.py ^
 # 각 옵션에 대한 자세한 설명은 해당 스크립트 main 함수에 직접 적혀 있음
 
 ## 검색 (텍스트 -> 이미지) 
+```bash
 python scripts\search_from_jsonl.py ^
   --query "컵 집는 장면" ^
   --make-gif ^
   --video-root data ^
   --jsonl artifacts/ti_only/embeddings.jsonl 
-
+```
 
 ### 쿼리는 자유롭게 변경해도 됨
 ### search_from_json.py를 이용해 쿼리를 임베딩해서 jsonl파일에서 유사도로 검색하는 구조
