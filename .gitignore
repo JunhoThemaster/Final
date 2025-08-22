@@ -1,0 +1,7 @@
+data/
+
+embedding/text2video/__pycache__/
+
+gif/
+
+scripts/__pycache__/
