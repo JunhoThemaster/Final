@@ -65,9 +65,8 @@ python scripts\search_from_jsonl.py ^
   --jsonl artifacts/ti_only/embeddings.jsonl 
 
 
-# 쿼리는 자유롭게 변경해도 됨
-# 현재 해당하는 영상의 첫 프레임이 이미지 임베딩되는 상황
-# search_from_json.py를 이용해 쿼리를 임베딩해서 jsonl파일에서 유사도로 검색하는 구조
-# 검색하는 기능은 text to text 임베딩과 동시에 적용되어야 한다고 생각함
-# 따라서 지금 만들어진 서치 기능은 로컬 환경에서 text to img의 테스트용
-# text to text 까지 고려해서 새로 만들어야함
+### 쿼리는 자유롭게 변경해도 됨
+### search_from_json.py를 이용해 쿼리를 임베딩해서 jsonl파일에서 유사도로 검색하는 구조
+### 검색하는 기능은 text to text 임베딩과 동시에 적용되어야 한다고 생각함
+### 따라서 지금 만들어진 서치 기능은 로컬 환경에서 text to img의 테스트용
+### text to text 까지 고려해서 새로 만들어야함
