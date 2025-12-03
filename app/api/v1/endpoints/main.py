@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints.users import router as user_router
-from app.api.v1.endpoints.users_video_emotion import router as users_video_emotion  # ✅ WebSocket 라우터 등록
+from app.api.v1.endpoints.users_video_emotion import router as users_video_emotion  #  WebSocket 라우터 등록
 
 
 app = FastAPI()
@@ -23,12 +23,12 @@ app.include_router(users_video_emotion)
 
 
 
-# 2. React index.html 라우팅
+# React index.html 라우팅
 @app.get("/")
 def serve_spa():
     return {"message": "Hello World"}
 
-# 3. API 엔드포인트 예시
+# API 엔드포인트 예시
 @app.get("/main")
 def hello():
     return {"message": "Hello from FastAPI!"}
