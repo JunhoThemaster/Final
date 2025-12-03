@@ -9,4 +9,4 @@ def load_audio_float32(path: str):
         y = y.mean(axis=1)
     if sr != target_sr:
         y = resample_poly(y, target_sr, sr)
-    return y.astype(np.float32)  # ✅ 이미 16000Hz 로 리샘플된 오디오
+    return y.astype(np.float32)  #  이미 16000Hz 로 리샘플된 오디오
