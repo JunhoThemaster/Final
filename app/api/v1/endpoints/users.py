@@ -65,16 +65,13 @@ class LoginData(BaseModel):
 
 @router.post("/login")
 def login(data: LoginData, db: Session = Depends(get_db)):
-    # ✅ 1. 이메일로 유저 조회
     user = db.query(User).filter(User.email == data.email).first()
     if not user:
         raise HTTPException(status_code=401, detail="존재하지 않는 사용자입니다.")
 
-    # ✅ 2. 비밀번호 검증
     if not pwd_context.verify(data.password, user.password):
         raise HTTPException(status_code=401, detail="비밀번호가 올바르지 않습니다.")
 
-    # ✅ 3. 토큰 생성
     token = create_access_token(data={"sub": user.name})
     return {"access_token": token, "token_type": "bearer"}
 
@@ -283,14 +280,14 @@ async def get_combined_analysis(interview_id: str, db: Session = Depends(get_db)
 
 
 
-    # 🔸 시각화용 통계 데이터 생성
+    #  시각화용 통계 데이터 생성
     try:
         visual_analysis = extract_visual_data(audio_data)
         video_analysis = extract_video_visual_data(video_data)
         print(visual_analysis)
         print(video_analysis)
     except Exception as e:
-        print("❌ 시각화 통계 처리 실패:", e)
+        print(" 시각화 통계 처리 실패:", e)
         visual_analysis = None
         video_analysis =None
     # 🔸 LLM 감정 요약 프롬프트 생성 및 요청 (음성 텍스트)
@@ -298,18 +295,18 @@ async def get_combined_analysis(interview_id: str, db: Session = Depends(get_db)
     try:
         audio_prompt = await interview_generator.build_audio_prompt(audio_data, interview.job_position, interview.job_url)
         audio_summary = await interview_generator.call_llm(audio_prompt)
-        print("✅ LLM 응답 수신 완료")
+        print(" LLM 응답 수신 완료")
     except Exception as e:
-        print("❌ LLM 호출 실패:", e)
+        print(" LLM 호출 실패:", e)
         audio_summary = None
 
 
     try:
         video_prompt = await interview_generator.build_video_prompt(video_data, interview.job_position, interview.job_url)
         video_summary = await interview_generator.call_llm(video_prompt)
-        print("✅ LLM 응답 수신 완료")
+        print(" LLM 응답 수신 완료")
     except Exception as e:
-        print("❌ LLM 영상 호출 실패:", e)
+        print(" LLM 영상 호출 실패:", e)
         video_summary = None
     try:
         audio_serialized = [serialize_audio_row(r) for r in audio_data]
@@ -318,9 +315,9 @@ async def get_combined_analysis(interview_id: str, db: Session = Depends(get_db)
             audio_serialized, video_serialized, interview.job_position, interview.job_url
         )
         combined_summary = await interview_generator.call_llm(combined_prompt)
-        print("✅ 통합 피드백 수신 완료")
+        print(" 통합 피드백 수신 완료")
     except Exception as e:
-        print("❌ 통합 LLM 호출 실패:", e)
+        print(" 통합 LLM 호출 실패:", e)
         combined_summary = None
     return {
         "audio_summary": audio_summary,
@@ -353,7 +350,7 @@ def extract_visual_data(audio_data):
 
     df = pd.DataFrame(records)
 
-    # ❗ 감정별 확률값이 없는 컬럼들도 미리 채워넣기
+    #  감정별 확률값이 없는 컬럼들도 미리 채워넣기
     all_emotions = ["fear", "angry", "disgust", "neutral", "sadness", "surprise", "happiness"]
     for emotion in all_emotions:
         if emotion not in df.columns:
@@ -361,18 +358,18 @@ def extract_visual_data(audio_data):
 
     df.fillna(0, inplace=True)  # 혹시 모를 NaN도 제거
 
-    # 🎯 시각화용 raw 데이터
+    #  시각화용 raw 데이터
     visual_data = df.to_dict(orient='records')
 
-    # 📈 평균 확률 계산
+    #  평균 확률 계산
     average_emotion_scores = df[all_emotions].mean().round(4).to_dict()
 
-    # 🔝 최빈 감정
+    #  최빈 감정
     emotion_counts = Counter(df['emotion'])
     most_common_emotion, top_count = emotion_counts.most_common(1)[0]
     top_emotion_ratio = round(top_count / len(df), 4)
 
-    # 📌 요약 통계
+    #  요약 통계
     summary_stats = {
         "num_questions": len(df),
         "unique_emotions": df['emotion'].nunique(),
@@ -410,20 +407,20 @@ def extract_video_visual_data(video_data):
     df = pd.DataFrame(records)
     df.fillna(0, inplace=True)
 
-    # 📈 감정 요약
+    #  감정 요약
     emotion_counts = Counter(df['emotion'])
     most_common_emotion, top_count = emotion_counts.most_common(1)[0]
     top_emotion_ratio = round(top_count / len(df), 4)
 
-    # 📈 평균 수치 계산
+    #  평균 수치 계산
     numeric_cols = ["confidence", "blink_count", "gaze_x", "gaze_y", "ear", "head_x", "head_y", "head_z"]
     averages = df[numeric_cols].mean().round(4).to_dict()
 
-    # 📊 자세 통계
+    #  자세 통계
     posture_counts = df['posture'].value_counts().to_dict()
     posture_ratio = {k: round(v / len(df), 4) for k, v in posture_counts.items()}
 
-    # 📌 요약 통계
+    #  요약 통계
     summary_stats = {
         "num_frames": len(df),
         "unique_emotions": df['emotion'].nunique(),
