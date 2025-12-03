@@ -2,7 +2,6 @@ import base64
 from PIL import Image
 from io import BytesIO
 
-# 👇 여기에 문자열만 붙여넣으면 됩니다
 base64_string = """
 /9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMC
 AgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDREND
@@ -54,16 +53,15 @@ AKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKA
 oAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoA//Z
 """.strip()
 
-# 👌 접두사나 쉼표가 있다면 안전하게 처리
 if ',' in base64_string:
     base64_string = base64_string.split(',')[-1]
 if base64_string.startswith("image:"):
     base64_string = base64_string.replace("image:", "").strip()
 
-# 🖼️ 디코딩 및 이미지 생성
+#  디코딩 및 이미지 생성
 image_data = base64.b64decode(base64_string)
 image = Image.open(BytesIO(image_data))
 
-# 💾 저장 및 열기
+#  저장 및 열기
 image.save("decoded_image.jpg")
 image.show()
