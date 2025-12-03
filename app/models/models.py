@@ -7,7 +7,7 @@ from datetime import datetime
 from app.core.db import Base
 
 
-# 🔹 1. User 테이블
+# User 테이블
 class User(Base):
     __tablename__ = "users"
 
@@ -19,7 +19,7 @@ class User(Base):
     audio_analyses = relationship("InterviewAudioAnalyze", back_populates="user")
 
 
-# 🔹 2. Interview (면접 세션) 테이블
+#  Interview (면접 세션) 테이블
 class Interview(Base):
     __tablename__ = "interviews"
 
@@ -33,7 +33,7 @@ class Interview(Base):
     audio_analyses = relationship("InterviewAudioAnalyze", back_populates="interview")
 
 
-# 🔹 3. InterviewAudioAnalyze 테이블
+# InterviewAudioAnalyze 테이블
 class InterviewAudioAnalyze(Base):
     __tablename__ = "interview_audio_analyze"
 
