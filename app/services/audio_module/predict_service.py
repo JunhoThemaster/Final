@@ -7,7 +7,7 @@ from .extract_melspectogram import preprocess_audio
 
 from ...DL_model.CNNBILSTM import CNNBiLSTM
 
-# 📐 오디오 파라미터 설정
+#  오디오 파라미터 설정
 SR = 16000           # 샘플링 레이트
 DURATION = 4         # 녹음 시간(초)
 SAMPLES = SR * DURATION
@@ -35,7 +35,7 @@ def predict_emotion(audio):
         pred = output.argmax(1).item()
         probs = torch.softmax(output, dim=1).cpu().numpy().squeeze()
 
-    print("🔍 감정별 확률:")
+    print(" 감정별 확률:")
     for i, p in enumerate(probs):
         print(f"  {label_classes[i]:<10}: {p:.2f}")
 
